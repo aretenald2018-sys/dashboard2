@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Life Streak</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted)">불러오는 중...</div>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-dot" id="sync-dot"></div>
+  <span id="sync-text">연결 중...</span>
+</div>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('home')">🏠 홈</button>
+  <button class="tab-btn"        onclick="switchTab('calendar')">📅 달력</button>
+  <button class="tab-btn"        onclick="switchTab('wine')">🍷 와인</button>
+  <button class="tab-btn"        onclick="switchTab('stats')">📊 통계</button>
+  <button class="tab-btn"        onclick="openSettingsModal()" style="flex:0;padding:13px 14px">⚙️</button>
+</nav>
+
+<!-- 7번: 헤더 — 통합 streak + 개별 카운트 -->
+<div class="stats-header">
+  <div class="stat-chip s-streak"><div class="val" id="h-streak">-</div><div class="lbl">🔥 통합 streak</div></div>
+  <div class="stat-chip s-gym">   <div class="val" id="h-gym">-</div>   <div class="lbl">💪 헬스 누적</div></div>
+  <div class="stat-chip s-cf">    <div class="val" id="h-cf">-</div>    <div class="lbl">🔥 크핏 누적</div></div>
+  <div class="stat-chip s-diet">  <div class="val" id="h-diet">-</div>  <div class="lbl">🥗 식단OK 누적</div></div>
+</div>
+
+<!-- ══ 홈 탭 ══ -->
+<div id="tab-home" class="tab-panel active">
+
+  <!-- 7번: streak 3종 카드 -->
+  <div class="streak-cards">
+    <div class="streak-card workout">
+      <div class="streak-card-val" id="streak-workout">0</div>
+      <div class="streak-card-lbl">💪 운동 streak</div>
+    </div>
+    <div class="streak-card diet">
+      <div class="streak-card-val" id="streak-diet">0</div>
+      <div class="streak-card-lbl">🥗 식단 streak</div>
+    </div>
+    <div class="streak-card combined">
+      <div class="streak-card-val" id="streak-combined">0</div>
+      <div class="streak-card-lbl">🔥 통합 streak</div>
+    </div>
+  </div>
+
+  <!-- AI 추천 -->
+  <div class="ai-panel">
+    <div class="ai-row">
+      <button class="ai-btn diet-btn"    onclick="getDietRec()">🥗 식단 추천</button>
+      <div class="ai-bubble" id="diet-bubble">버튼을 누르면 오늘의 식단 3가지를 추천해드려요.</div>
+    </div>
+    <div class="ai-row">
+      <button class="ai-btn workout-btn" onclick="getWorkoutRec()">💪 운동 추천</button>
+      <div class="ai-bubble" id="workout-bubble">이번 주 운동 메모를 바탕으로 오늘의 운동을 추천해드려요.</div>
+    </div>
+  </div>
+
+  <!-- 주가 -->
+  <div class="stock-panel">
+    <div class="stock-row" id="stock-row"><div style="font-size:12px;color:var(--muted);padding:8px">주가 로딩 중...</div></div>
+    <div class="stock-updated" id="stock-updated"></div>
+  </div>
+
+  <!-- 11번: 목표 카드 -->
+  <div class="home-section">
+    <div class="home-card">
+      <div class="home-card-title">🎯 목표</div>
+      <div id="goals-section"></div>
+    </div>
+    <div class="home-card">
+      <div class="home-card-title">🥗 오늘 식단</div>
+      <div id="today-diet-summary"></div>
+    </div>
+    <div class="home-card">
+      <div class="home-card-title">💪 오늘 운동</div>
+      <div id="today-workout-summary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 달력 탭 ══ -->
+<div id="tab-calendar" class="tab-panel">
+  <div class="nav-bar">
+    <button class="nav-btn" onclick="changeYear(-1)">←</button>
+    <span class="nav-year" id="year-label"></span>
+    <button class="nav-btn" onclick="changeYear(1)">→</button>
+  </div>
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--gym)"></div>헬스</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--cf)"></div>크핏</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--diet-ok)"></div>식단OK</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--diet-bad)"></div>식단NG</div>
+    <div class="legend-item" style="color:var(--muted)">탭 → 입력</div>
+  </div>
+  <div class="calendar-wrap" id="calendar"></div>
+</div>
+
+<!-- ══ 통계 탭 ══ -->
+<div id="tab-stats" class="tab-panel">
+  <div class="stats-section">
+
+    <!-- 13번: CSV 내보내기 버튼 -->
+    <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+      <button class="export-btn" onclick="openExportModal()">📥 CSV 내보내기</button>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">💪 근육 부위 활성화 — 최근 14일</div>
+      <div id="muscle-14d"></div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);">
+        <span style="color:var(--streak)">●</span> 2회↑&nbsp;&nbsp;
+        <span style="color:var(--accent)">●</span> 1회&nbsp;&nbsp;
+        <span style="color:#ef4444">●</span> 0회
+      </div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">📈 기간별 근육 부위 횟수</div>
+      <div class="period-tabs">
+        <button class="period-btn active" onclick="setPeriod(30,this)">30일</button>
+        <button class="period-btn"        onclick="setPeriod(60,this)">60일</button>
+        <button class="period-btn"        onclick="setPeriod(90,this)">90일</button>
+        <button class="period-btn"        onclick="setPeriod(0,this)">전체</button>
+      </div>
+      <div id="muscle-period"></div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">📉 종목별 볼륨 추이 (kg × 회 × 세트)</div>
+      <div id="volume-section"></div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">🥗 식단 통계 (올해)</div>
+      <div id="diet-stats"></div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">📅 월별 운동 일수</div>
+      <div class="monthly-row" id="monthly-summary"></div>
+    </div>
+
+    <div class="stats-block">
+      <div class="stats-block-title">🗓 연간 히트맵 <span id="heatmap-year" style="color:var(--accent)"></span></div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;font-size:9px;color:var(--muted);">
+        <span style="flex:1;text-align:center">일</span><span style="flex:1;text-align:center">월</span>
+        <span style="flex:1;text-align:center">화</span><span style="flex:1;text-align:center">수</span>
+        <span style="flex:1;text-align:center">목</span><span style="flex:1;text-align:center">금</span>
+        <span style="flex:1;text-align:center">토</span>
+      </div>
+      <div class="heatmap-grid" id="heatmap"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ 바텀 시트 ══ -->
+<div class="sheet-overlay" id="sheet" onclick="closeSheet(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheet-title"></div>
+    <div class="sheet-section">
+      <div class="ex-list-header">
+        <span class="sheet-section-label" style="margin-bottom:0">💪 운동</span>
+        <button class="ex-add-btn" onclick="openExercisePicker()">+ 종목 추가</button>
+      </div>
+      <div id="exercise-list" style="margin-top:8px;"></div>
+      <textarea class="memo-input" id="workout-memo" placeholder="운동 메모 (예: 벤치 컨디션 좋았음...)"></textarea>
+      <div class="cf-toggle-row">
+        <span class="cf-label">🔥 크로스핏</span>
+        <div class="toggle-switch" id="cf-toggle" onclick="toggleCF()"><div class="toggle-knob"></div></div>
+      </div>
+    </div>
+    <div class="sheet-section">
+      <div class="sheet-section-label">🥗 식단 기록</div>
+      <div class="diet-grid">
+        <div class="diet-meal-row">
+          <div class="diet-meal-label">☀️ 아침</div>
+          <input class="diet-meal-input" id="meal-breakfast" placeholder="예: 현미밥, 계란 2개, 샐러드">
+          <div class="diet-result" id="result-breakfast"><span class="diet-badge pending">미분석</span></div>
+        </div>
+        <div class="diet-meal-row">
+          <div class="diet-meal-label">🌤 점심</div>
+          <input class="diet-meal-input" id="meal-lunch" placeholder="예: 닭가슴살 200g, 고구마">
+          <div class="diet-result" id="result-lunch"><span class="diet-badge pending">미분석</span></div>
+        </div>
+        <div class="diet-meal-row">
+          <div class="diet-meal-label">🌙 저녁</div>
+          <input class="diet-meal-input" id="meal-dinner" placeholder="예: 두부찌개, 나물반찬">
+          <div class="diet-result" id="result-dinner"><span class="diet-badge pending">미분석</span></div>
+        </div>
+      </div>
+      <button class="diet-analyze-btn" id="analyze-btn" onclick="runAnalyzeDiet()">🔍 Claude로 식단 분석하기</button>
+    </div>
+    <div class="sheet-actions">
+      <button class="sheet-btn cancel"  onclick="closeSheet()">취소</button>
+      <button class="sheet-btn confirm" onclick="confirmSheet()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 종목 선택 모달 ══ -->
+<div class="modal-overlay" id="ex-picker-modal" onclick="closeExercisePicker(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">종목 선택</div>
+    <div id="ex-picker-list"></div>
+  </div>
+</div>
+
+<!-- ══ 종목 에디터 모달 ══ -->
+<div class="modal-overlay" id="ex-editor-modal" onclick="closeExerciseEditor(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title" id="ex-editor-title">종목 추가</div>
+    <div class="ex-editor-form">
+      <div><div class="ex-editor-label">부위</div><select class="ex-editor-select" id="ex-editor-muscle"></select></div>
+      <div><div class="ex-editor-label">종목 이름</div><input class="ex-editor-input" id="ex-editor-name" placeholder="예: 케이블 크로스오버"></div>
+      <div class="ex-editor-actions">
+        <button class="ex-editor-cancel" onclick="closeExerciseEditor()">취소</button>
+        <button class="ex-editor-save"   onclick="saveExerciseFromEditor()">저장</button>
+      </div>
+      <button class="ex-editor-delete" id="ex-editor-delete" onclick="deleteExerciseFromEditor()">🗑 종목 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 11번: 목표 추가 모달 ══ -->
+<div class="modal-overlay" id="goal-modal" onclick="closeGoalModal(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">🎯 목표 추가</div>
+    <div class="ex-editor-form">
+      <div>
+        <div class="ex-editor-label">목표 종류</div>
+        <select class="ex-editor-select" id="goal-type">
+          <option value="monthly_workout">이번 달 운동 일수</option>
+          <option value="streak_workout">운동 streak 일수</option>
+          <option value="streak_diet">식단 streak 일수</option>
+          <option value="streak_combined">통합 streak 일수</option>
+          <option value="exercise_weight">종목 목표 중량 (kg)</option>
+        </select>
+      </div>
+      <div>
+        <div class="ex-editor-label">목표 이름</div>
+        <input class="ex-editor-input" id="goal-label" placeholder="예: 이번 달 20일 운동">
+      </div>
+      <div>
+        <div class="ex-editor-label">목표 수치</div>
+        <input class="ex-editor-input" id="goal-target" type="number" placeholder="예: 20" min="1">
+      </div>
+      <div class="ex-editor-actions">
+        <button class="ex-editor-cancel" onclick="closeGoalModal()">취소</button>
+        <button class="ex-editor-save"   onclick="saveGoalFromModal()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 13번: CSV 내보내기 모달 ══ -->
+<div class="modal-overlay" id="export-modal" onclick="closeExportModal(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">📥 CSV 내보내기</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:4px;">
+      <button class="export-period-btn" onclick="runExportCSV(30)">최근 30일</button>
+      <button class="export-period-btn" onclick="runExportCSV(90)">최근 90일</button>
+      <button class="export-period-btn" onclick="runExportCSV(365)">최근 1년</button>
+      <button class="export-period-btn" onclick="runExportCSV(0)">전체 데이터</button>
+      <button class="ex-editor-cancel"  onclick="closeExportModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 와인 탭 ══ -->
+<div id="tab-wine" class="tab-panel">
+  <div class="wine-tab-header">
+    <span class="wine-tab-title">🍷 와인 테이스팅 노트</span>
+    <button class="wine-add-btn" onclick="openWineModal()">+ 기록 추가</button>
+  </div>
+  <div id="wine-list" class="wine-list"></div>
+</div>
+
+<!-- ══ 와인 추가/수정 모달 ══ -->
+<div class="modal-overlay" id="wine-modal" onclick="closeWineModal(event)">
+  <div class="modal-sheet wine-modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title" id="wine-modal-title">🍷 와인 기록 추가</div>
+
+    <div class="wine-form">
+      <!-- 기본 정보 -->
+      <div class="wine-form-section">
+        <div class="wine-form-row">
+          <div class="wine-form-field" style="flex:3">
+            <label class="wine-form-label">와인명 *</label>
+            <input class="wine-form-input" id="wine-name" placeholder="예: Maggy Hawk Stormin">
+          </div>
+          <div class="wine-form-field" style="flex:1">
+            <label class="wine-form-label">빈티지</label>
+            <input class="wine-form-input" id="wine-vintage" placeholder="2021" type="number">
+          </div>
+        </div>
+        <div class="wine-form-row">
+          <div class="wine-form-field">
+            <label class="wine-form-label">산지</label>
+            <input class="wine-form-input" id="wine-region" placeholder="예: 앤더슨 밸리, 캘리포니아">
+          </div>
+          <div class="wine-form-field">
+            <label class="wine-form-label">품종</label>
+            <input class="wine-form-input" id="wine-variety" placeholder="예: Pinot Noir">
+          </div>
+        </div>
+        <div class="wine-form-field">
+          <label class="wine-form-label">기록 날짜</label>
+          <input class="wine-form-input" id="wine-date" type="date">
+        </div>
+      </div>
+
+      <!-- 평점 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">⭐ 나의 평점</div>
+        <div class="wine-form-row" style="align-items:flex-end">
+          <div class="wine-form-field" style="flex:1">
+            <label class="wine-form-label">별점 (0.5~5.0)</label>
+            <input class="wine-form-input" id="wine-taewoo" placeholder="4.5" type="number" min="0.5" max="5" step="0.5">
+          </div>
+          <div class="wine-form-field" style="flex:2">
+            <label class="wine-form-label">한줄 총평</label>
+            <input class="wine-form-input" id="wine-taewoo-summary" placeholder="예: 우아한 피노누아, 강추">
+          </div>
+        </div>
+      </div>
+
+      <!-- 외관 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">👁 외관</div>
+        <div class="wine-form-field">
+          <label class="wine-form-label">색상</label>
+          <input class="wine-form-input" id="wine-color" placeholder="예: 맑고 투명한 루비색">
+        </div>
+      </div>
+
+      <!-- 향/맛 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">👃 향 & 👅 맛</div>
+        <div class="wine-form-field">
+          <label class="wine-form-label">향 (Nose)</label>
+          <textarea class="wine-form-input wine-form-textarea" id="wine-nose"
+            placeholder="예: 라즈베리, 딸기, 사워체리의 고혹적인 향기" rows="2"></textarea>
+        </div>
+        <div class="wine-form-field">
+          <label class="wine-form-label">맛 (Palate)</label>
+          <textarea class="wine-form-input wine-form-textarea" id="wine-palate"
+            placeholder="예: 상당한 산미. 탄닌이 혀를 감싸안을 정도." rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- 구조감 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">⚖️ 구조감 (0~5)</div>
+        <div class="wine-form-row">
+          <div class="wine-form-field">
+            <label class="wine-form-label">당도</label>
+            <input class="wine-form-input" id="wine-sweetness" type="number" min="0" max="5" step="0.5" placeholder="0~5">
+          </div>
+          <div class="wine-form-field">
+            <label class="wine-form-label">탄닌</label>
+            <input class="wine-form-input" id="wine-tannin" type="number" min="0" max="5" step="0.5" placeholder="0~5">
+          </div>
+          <div class="wine-form-field">
+            <label class="wine-form-label">산도</label>
+            <input class="wine-form-input" id="wine-acidity" type="number" min="0" max="5" step="0.5" placeholder="0~5">
+          </div>
+          <div class="wine-form-field">
+            <label class="wine-form-label">알콜</label>
+            <input class="wine-form-input" id="wine-alcohol" type="number" min="0" max="5" step="0.5" placeholder="0~5">
+          </div>
+        </div>
+      </div>
+
+      <!-- 감상평 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">📝 나의 감상평</div>
+        <div class="wine-form-field">
+          <textarea class="wine-form-input wine-form-textarea" id="wine-note"
+            placeholder="자유롭게 남기는 메모" rows="3"></textarea>
+        </div>
+      </div>
+
+      <!-- 이미지 -->
+      <div class="wine-form-section">
+        <div class="wine-form-section-title">🖼 이미지</div>
+        <div class="wine-form-row" style="align-items:flex-end">
+          <div class="wine-form-field" style="flex:1">
+            <label class="wine-form-label">이미지 URL</label>
+            <input class="wine-form-input" id="wine-image-url" placeholder="https://...">
+          </div>
+          <button class="wine-search-btn" id="wine-image-search-btn" onclick="searchWineImage()">🖼 이미지 검색</button>
+        </div>
+        <img id="wine-image-preview" style="display:none;width:80px;height:100px;object-fit:cover;border-radius:6px;margin-top:8px;border:1px solid var(--border)" alt="미리보기">
+      </div>
+
+      <div class="wine-form-actions">
+        <button class="ex-editor-cancel" onclick="closeWineModal()">취소</button>
+        <button class="ex-editor-save"   onclick="saveWineFromModal()">저장</button>
+      </div>
+      <button class="ex-editor-delete" id="wine-delete-btn" onclick="deleteWineFromModal()" style="display:none">🗑 기록 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 설정 모달 ══ -->
+<div class="modal-overlay" id="settings-modal" onclick="closeSettingsModal(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">⚙️ API 키 설정</div>
+    <div class="ex-editor-form">
+      <div>
+        <div class="ex-editor-label">Anthropic API 키 (Claude AI)</div>
+        <input class="ex-editor-input" id="cfg-anthropic" type="password"
+          placeholder="sk-ant-api03-..." autocomplete="off">
+      </div>
+      <div>
+        <div class="ex-editor-label">Alpha Vantage API 키 (주가)</div>
+        <input class="ex-editor-input" id="cfg-alphavantage" type="password"
+          placeholder="XXXXXXXXXXXXXXXX" autocomplete="off">
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;padding:8px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+        🔒 키는 이 기기의 브라우저에만 저장돼요.<br>GitHub에 업로드되지 않아요.
+      </div>
+      <div class="ex-editor-actions">
+        <button class="ex-editor-cancel" onclick="closeSettingsModal()">취소</button>
+        <button class="ex-editor-save"   onclick="saveSettings()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
