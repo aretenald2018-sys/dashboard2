@@ -8,6 +8,7 @@ export const CONFIG = {
   // API 키는 localStorage에서 로드 (앱 설정에서 입력)
   get ANTHROPIC_KEY()    { return localStorage.getItem('cfg_anthropic')    || ''; },
   get ALPHAVANTAGE_KEY() { return localStorage.getItem('cfg_alphavantage') || ''; },
+  get FINNHUB_KEY()      { return localStorage.getItem('cfg_finnhub')      || ''; },
 
   FIREBASE: {
     apiKey:            "AIzaSyCk2czvJ8DRautrUput8TLjdrArpQm7BBk",
