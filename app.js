@@ -101,8 +101,8 @@ function runExportCSV(period) {
 
 // ── 설정 모달 ────────────────────────────────────────────────────
 function openSettingsModal() {
-  document.getElementById('cfg-anthropic').value = localStorage.getItem('cfg_anthropic') || '';
-  document.getElementById('cfg-finnhub').value   = localStorage.getItem('cfg_finnhub')   || '';
+  document.getElementById('cfg-anthropic').value    = localStorage.getItem('cfg_anthropic')    || '';
+  document.getElementById('cfg-alphavantage').value = localStorage.getItem('cfg_alphavantage') || '';
   document.getElementById('settings-modal').classList.add('open');
 }
 
@@ -112,12 +112,12 @@ function closeSettingsModal(e) {
 }
 
 function saveSettings() {
-  const anthropic = document.getElementById('cfg-anthropic').value.trim();
-  const finnhub   = document.getElementById('cfg-finnhub').value.trim();
-  if (anthropic) localStorage.setItem('cfg_anthropic', anthropic);
-  if (finnhub)   localStorage.setItem('cfg_finnhub',   finnhub);
+  const anthropic    = document.getElementById('cfg-anthropic').value.trim();
+  const alphavantage = document.getElementById('cfg-alphavantage').value.trim();
+  if (anthropic)    localStorage.setItem('cfg_anthropic',    anthropic);
+  if (alphavantage) localStorage.setItem('cfg_alphavantage', alphavantage);
   document.getElementById('settings-modal').classList.remove('open');
-  if (finnhub) loadStocks();
+  if (alphavantage) loadStocks();
 }
 
 window.openSettingsModal  = openSettingsModal;
