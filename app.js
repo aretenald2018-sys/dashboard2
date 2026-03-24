@@ -12,6 +12,10 @@ import { getDietRec, getWorkoutRec,
 import { renderCalendar, changeYear }               from './render-calendar.js';
 import { renderStats, setPeriod, exportCSV }        from './render-stats.js';
 import { renderHome }                               from './render-home.js';
+import { renderLoa, toggleLoaCheck, toggleLoaWeekly,
+         setLoaActiveChar, deleteLoaChar,
+         openLoaAddModal, closeLoaAddModal,
+         searchLoaSiblings, selectLoaChar }           from './render-loa.js';
 import { renderWine, openWineModal, closeWineModal,
          saveWineFromModal, deleteWineFromModal,
          searchVivinoRating, searchWineImage,
@@ -31,13 +35,14 @@ let _currentTab = 'home';
 function switchTab(tab) {
   _currentTab = tab;
   document.querySelectorAll('.tab-btn').forEach((b,i) =>
-    b.classList.toggle('active', ['home','calendar','wine','stats'][i] === tab)
+    b.classList.toggle('active', ['home','calendar','wine','stats','loa'][i] === tab)
   );
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
   if (tab === 'stats')    renderStats();
   if (tab === 'calendar') renderCalendar();
   if (tab === 'wine')     renderWine();
+  if (tab === 'loa')      renderLoa();
 }
 
 function renderAll() {
@@ -296,6 +301,16 @@ window.onQuestAutoChange        = onQuestAutoChange;
 window.openExportModal          = openExportModal;
 window.closeExportModal         = closeExportModal;
 window.runExportCSV             = runExportCSV;
+// 로아
+window.renderLoa           = renderLoa;
+window.toggleLoaCheck      = toggleLoaCheck;
+window.toggleLoaWeekly     = toggleLoaWeekly;
+window.setLoaActiveChar    = setLoaActiveChar;
+window.deleteLoaChar       = deleteLoaChar;
+window.openLoaAddModal     = openLoaAddModal;
+window.closeLoaAddModal    = closeLoaAddModal;
+window.searchLoaSiblings   = searchLoaSiblings;
+window.selectLoaChar       = selectLoaChar;
 // 와인
 window.openWineModal            = openWineModal;
 window.closeWineModal           = closeWineModal;

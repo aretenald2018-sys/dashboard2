@@ -24,6 +24,7 @@
   <button class="tab-btn"        onclick="switchTab('calendar')">📅 달력</button>
   <button class="tab-btn"        onclick="switchTab('wine')">🍷 와인</button>
   <button class="tab-btn"        onclick="switchTab('stats')">📊 통계</button>
+  <button class="tab-btn"        onclick="switchTab('loa')">⚔️ 로아</button>
   <button class="tab-btn"        onclick="openSettingsModal()" style="flex:0;padding:13px 14px">⚙️</button>
 </nav>
 
@@ -409,6 +410,35 @@
       <button class="export-period-btn" onclick="runExportCSV(365)">최근 1년</button>
       <button class="export-period-btn" onclick="runExportCSV(0)">전체 데이터</button>
       <button class="ex-editor-cancel"  onclick="closeExportModal()">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 로아 탭 ══ -->
+<div id="tab-loa" class="tab-panel">
+  <div class="loa-tab-header">
+    <span class="loa-tab-title">⚔️ 로스트아크 숙제</span>
+  </div>
+  <div id="loa-container" class="loa-container"></div>
+</div>
+
+<!-- ══ 로아 캐릭터 추가 모달 ══ -->
+<div class="modal-overlay" id="loa-add-modal" onclick="closeLoaAddModal(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">⚔️ 캐릭터 등록</div>
+    <div class="ex-editor-form">
+      <div>
+        <div class="ex-editor-label">캐릭터명 입력 (원정대 전체 조회)</div>
+        <div style="display:flex;gap:8px;">
+          <input class="ex-editor-input" id="loa-search-name" placeholder="예: 홍길동"
+            onkeydown="if(event.key==='Enter') searchLoaSiblings()">
+          <button class="loa-search-btn" id="loa-search-btn" onclick="searchLoaSiblings()">검색</button>
+        </div>
+        <div id="loa-search-error" style="font-size:11px;color:var(--diet-bad);margin-top:4px;"></div>
+      </div>
+      <div id="loa-sibling-list" class="loa-sibling-list"></div>
+      <button class="ex-editor-cancel" onclick="closeLoaAddModal()" style="margin-top:4px;">닫기</button>
     </div>
   </div>
 </div>
