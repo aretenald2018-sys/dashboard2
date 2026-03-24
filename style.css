@@ -66,28 +66,35 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 /* ── 숙제 ── */
 .home-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 /* ── 퀘스트 공통 ── */
-.quest-add-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;}
-.quest-add-btn:active{background:var(--surface3);}
-.quest-empty{font-size:12px;color:var(--muted);padding:4px 0 8px;}
-.quest-period-badge{font-size:9px;color:var(--muted);background:var(--surface3);border-radius:4px;padding:2px 6px;margin-left:4px;font-weight:400;vertical-align:middle;}
+.quest-add-btn{background:none;border:none;color:var(--muted2);font-size:16px;line-height:1;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;transition:color .12s;flex-shrink:0;}
+.quest-add-btn:active{color:var(--text);}
+.quest-empty{font-size:11px;color:var(--muted);padding:4px 0;}
+.quest-period-badge{font-size:9px;color:var(--muted);background:var(--surface3);border-radius:4px;padding:1px 5px;font-weight:400;vertical-align:middle;}
 
-/* ── 퀘스트 2×2 그리드 카드 ── */
-.quest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.quest-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s;}
+/* ── 퀘스트 보드 (2×2 외부 그리드) ── */
+.quest-board-card{padding:10px!important;}
+.quest-board{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border-radius:10px;overflow:hidden;}
+.quest-cell{background:var(--surface);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:80px;}
+.quest-cell-header{display:flex;align-items:center;justify-content:space-between;}
+.quest-cell-title{font-size:11px;font-weight:700;color:var(--muted2);}
+
+/* ── 퀘스트 카드 내부 (1×1 리스트) ── */
+.quest-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:6px;margin-bottom:6px;transition:border-color .15s;}
+.quest-card:last-child{margin-bottom:0;}
 .quest-card.done{border-color:var(--streak);background:var(--diet-ok-dim);}
 .quest-card-top{display:flex;align-items:flex-start;gap:4px;}
-.quest-card-title{flex:1;font-size:12px;font-weight:500;color:var(--text);line-height:1.4;word-break:keep-all;}
+.quest-card-title{flex:1;font-size:11px;font-weight:500;color:var(--text);line-height:1.4;word-break:keep-all;}
 .quest-card.done .quest-card-title{opacity:.6;text-decoration:line-through;}
-.quest-card-actions{display:flex;align-items:center;gap:2px;flex-shrink:0;}
-.quest-edit-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
-.quest-delete-btn{background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
-.quest-card-bottom{display:flex;flex-direction:column;gap:5px;}
-.quest-bar-wrap{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;}
-.quest-bar{height:100%;border-radius:3px;transition:width .5s ease;}
+.quest-card-actions{display:flex;align-items:center;gap:1px;flex-shrink:0;}
+.quest-edit-btn{background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
+.quest-delete-btn{background:none;border:none;color:var(--muted);font-size:10px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
+.quest-card-bottom{display:flex;flex-direction:column;gap:4px;}
+.quest-bar-wrap{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;}
+.quest-bar{height:100%;border-radius:2px;transition:width .5s ease;}
 .quest-card-footer{display:flex;align-items:center;justify-content:space-between;}
-.quest-label{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;}
-.quest-auto-tag{font-size:9px;background:var(--cf-dim);color:var(--cf);border:1px solid var(--cf);border-radius:4px;padding:1px 4px;margin-left:2px;}
-.quest-check-btn{font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface3);color:var(--muted2);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;font-family:'Noto Sans KR',sans-serif;}
+.quest-label{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:700;}
+.quest-auto-tag{font-size:8px;background:var(--cf-dim);color:var(--cf);border:1px solid var(--cf);border-radius:3px;padding:1px 3px;}
+.quest-check-btn{font-size:9px;padding:2px 6px;border-radius:5px;border:1px solid var(--border);background:var(--surface3);color:var(--muted2);cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;font-family:'Noto Sans KR',sans-serif;}
 .quest-check-btn.checked{background:var(--diet-ok-dim);border-color:var(--streak);color:var(--streak);}
 .quest-check-btn:active{transform:scale(.95);}
 

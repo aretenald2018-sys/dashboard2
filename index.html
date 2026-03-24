@@ -101,40 +101,42 @@
   <!-- 퀘스트 + 목표 -->
   <div class="home-section">
 
-    <!-- 분기 퀘스트 -->
-    <div class="home-card">
-      <div class="home-card-header">
-        <div class="home-card-title">🌙 분기 퀘스트 <span class="quest-period-badge">매 분기 리셋</span></div>
-        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
+    <!-- 퀘스트 2×2 통합 보드 -->
+    <div class="home-card quest-board-card">
+      <div class="quest-board">
+        <!-- 분기 -->
+        <div class="quest-cell">
+          <div class="quest-cell-header">
+            <div class="quest-cell-title">🌙 분기 <span class="quest-period-badge">분기 리셋</span></div>
+            <button class="quest-add-btn" onclick="openQuestModal()">+</button>
+          </div>
+          <div id="quarterly-quests"></div>
+        </div>
+        <!-- 월간 -->
+        <div class="quest-cell">
+          <div class="quest-cell-header">
+            <div class="quest-cell-title">📆 월간 <span class="quest-period-badge">매월 리셋</span></div>
+            <button class="quest-add-btn" onclick="openQuestModal()">+</button>
+          </div>
+          <div id="monthly-quests"></div>
+        </div>
+        <!-- 주간 -->
+        <div class="quest-cell">
+          <div class="quest-cell-header">
+            <div class="quest-cell-title">📅 주간 <span class="quest-period-badge">매주 리셋</span></div>
+            <button class="quest-add-btn" onclick="openQuestModal()">+</button>
+          </div>
+          <div id="weekly-quests"></div>
+        </div>
+        <!-- 일간 -->
+        <div class="quest-cell">
+          <div class="quest-cell-header">
+            <div class="quest-cell-title">☀️ 일간 <span class="quest-period-badge">매일 리셋</span></div>
+            <button class="quest-add-btn" onclick="openQuestModal()">+</button>
+          </div>
+          <div id="daily-quests"></div>
+        </div>
       </div>
-      <div id="quarterly-quests"></div>
-    </div>
-
-    <!-- 월간 퀘스트 -->
-    <div class="home-card">
-      <div class="home-card-header">
-        <div class="home-card-title">📆 월간 퀘스트 <span class="quest-period-badge">매월 1일 리셋</span></div>
-        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
-      </div>
-      <div id="monthly-quests"></div>
-    </div>
-
-    <!-- 주간 퀘스트 -->
-    <div class="home-card">
-      <div class="home-card-header">
-        <div class="home-card-title">📅 주간 퀘스트 <span class="quest-period-badge">매주 월요일 리셋</span></div>
-        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
-      </div>
-      <div id="weekly-quests"></div>
-    </div>
-
-    <!-- 일간 퀘스트 -->
-    <div class="home-card">
-      <div class="home-card-header">
-        <div class="home-card-title">☀️ 일간 퀘스트 <span class="quest-period-badge">매일 자정 리셋</span></div>
-        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
-      </div>
-      <div id="daily-quests"></div>
     </div>
 
     <!-- 목표 -->
