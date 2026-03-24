@@ -109,7 +109,7 @@ function _renderQuestSection(elId, quests, type) {
   const autoWorkoutDone = getMuscles(y,m,d).length > 0 || getCF(y,m,d);
   const autoDietDone    = dietDayOk(y,m,d) === true;
 
-  const cards = quests.map(quest => { // 1x1 리스트
+  const html = quests.map(quest => {
     let done=false, pct=0, label='';
     const target = quest.target || 1; // 목표 횟수 (1이면 1회성)
 
@@ -175,7 +175,8 @@ function _renderQuestSection(elId, quests, type) {
       </div>`;
   }).join('');
 
-  el.innerHTML = cards.join('');}
+  el.innerHTML = html;
+}
 
 // ── 목표 진행률 ──────────────────────────────────────────────────
 function _renderGoals() {
