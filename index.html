@@ -98,23 +98,43 @@
     <div class="stock-updated" id="stock-updated"></div>
   </div>
 
-  <!-- 일간 숙제 -->
+  <!-- 퀘스트 + 목표 -->
   <div class="home-section">
+
+    <!-- 분기 퀘스트 -->
     <div class="home-card">
       <div class="home-card-header">
-        <div class="home-card-title">☀️ 일간 숙제</div>
-        <button class="quest-add-btn" onclick="openQuestModal()" data-default-type="daily">+ 추가</button>
+        <div class="home-card-title">🌙 분기 퀘스트 <span class="quest-period-badge">매 분기 리셋</span></div>
+        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
       </div>
-      <div id="daily-quests"></div>
+      <div id="quarterly-quests"></div>
     </div>
 
-    <!-- 주간 숙제 -->
+    <!-- 월간 퀘스트 -->
     <div class="home-card">
       <div class="home-card-header">
-        <div class="home-card-title">📅 주간 숙제</div>
-        <button class="quest-add-btn" onclick="openQuestModal()" data-default-type="weekly">+ 추가</button>
+        <div class="home-card-title">📆 월간 퀘스트 <span class="quest-period-badge">매월 1일 리셋</span></div>
+        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
+      </div>
+      <div id="monthly-quests"></div>
+    </div>
+
+    <!-- 주간 퀘스트 -->
+    <div class="home-card">
+      <div class="home-card-header">
+        <div class="home-card-title">📅 주간 퀘스트 <span class="quest-period-badge">매주 월요일 리셋</span></div>
+        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
       </div>
       <div id="weekly-quests"></div>
+    </div>
+
+    <!-- 일간 퀘스트 -->
+    <div class="home-card">
+      <div class="home-card-header">
+        <div class="home-card-title">☀️ 일간 퀘스트 <span class="quest-period-badge">매일 자정 리셋</span></div>
+        <button class="quest-add-btn" onclick="openQuestModal()">+ 추가</button>
+      </div>
+      <div id="daily-quests"></div>
     </div>
 
     <!-- 목표 -->
@@ -309,26 +329,28 @@
   </div>
 </div>
 
-<!-- ══ 숙제 추가 모달 ══ -->
+<!-- ══ 퀘스트 추가 모달 ══ -->
 <div class="modal-overlay" id="quest-modal" onclick="closeQuestModal(event)">
   <div class="modal-sheet">
     <div class="sheet-handle"></div>
-    <div class="modal-title">📋 숙제 추가</div>
+    <div class="modal-title">📋 퀘스트 추가</div>
     <div class="ex-editor-form">
       <div>
-        <div class="ex-editor-label">숙제 이름</div>
+        <div class="ex-editor-label">퀘스트 이름</div>
         <input class="ex-editor-input" id="quest-title" placeholder="예: 유산소 30분, 물 2L 마시기">
       </div>
       <div>
         <div class="ex-editor-label">종류</div>
         <select class="ex-editor-select" id="quest-type" onchange="onQuestTypeChange()">
-          <option value="daily">일간 (매일 자정 리셋)</option>
+          <option value="quarterly">분기 (매 분기 리셋)</option>
+          <option value="monthly">월간 (매월 1일 리셋)</option>
           <option value="weekly">주간 (매주 월요일 리셋)</option>
+          <option value="daily">일간 (매일 자정 리셋)</option>
         </select>
       </div>
-      <div id="quest-weekly-wrap" style="display:none;">
-        <div class="ex-editor-label">주간 목표 횟수</div>
-        <input class="ex-editor-input" id="quest-weekly-target" type="number" min="1" max="7" value="5" placeholder="예: 5">
+      <div id="quest-target-wrap" style="display:none;">
+        <div class="ex-editor-label">목표 횟수 <span style="color:var(--muted);font-size:10px">(1이면 1회성)</span></div>
+        <input class="ex-editor-input" id="quest-target" type="number" min="1" value="1" placeholder="예: 12">
       </div>
       <div class="goal-condition-toggle-row">
         <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted2);cursor:pointer;">
@@ -346,6 +368,29 @@
       <div class="ex-editor-actions">
         <button class="ex-editor-cancel" onclick="closeQuestModal()">취소</button>
         <button class="ex-editor-save"   onclick="saveQuestFromModal()">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 퀘스트 편집 모달 ══ -->
+<div class="modal-overlay" id="quest-edit-modal" onclick="closeQuestEditModal(event)">
+  <div class="modal-sheet">
+    <div class="sheet-handle"></div>
+    <div class="modal-title">✏️ 퀘스트 편집</div>
+    <div class="ex-editor-form">
+      <input type="hidden" id="quest-edit-id">
+      <div>
+        <div class="ex-editor-label">퀘스트 이름</div>
+        <input class="ex-editor-input" id="quest-edit-title" placeholder="퀘스트 이름">
+      </div>
+      <div id="quest-edit-target-wrap">
+        <div class="ex-editor-label">목표 횟수 <span style="color:var(--muted);font-size:10px">(1이면 1회성)</span></div>
+        <input class="ex-editor-input" id="quest-edit-target" type="number" min="1" placeholder="예: 12">
+      </div>
+      <div class="ex-editor-actions">
+        <button class="ex-editor-cancel" onclick="closeQuestEditModal()">취소</button>
+        <button class="ex-editor-save"   onclick="saveQuestEdit()">저장</button>
       </div>
     </div>
   </div>

@@ -1,6 +1,6 @@
 // ================================================================
 // render-home.js
-// 변경: 통합 대시보드, 주간/일간 숙제, 목표 개편
+// 변경: 퀘스트 명칭, 분기/월간/주간/일간 4종, 2x2 그리드, 사후편집
 // ================================================================
 
 import { MUSCLES }                                   from './config.js';
@@ -29,67 +29,89 @@ function _renderDashboard() {
       if (dietDayOk(y,m,d)===true)  dietTotal++;
     }
 
-  document.getElementById('dash-workout-streak').textContent = workout;
-  document.getElementById('dash-workout-total').textContent  = gymTotal;
-  document.getElementById('dash-diet-streak').textContent    = diet;
-  document.getElementById('dash-diet-total').textContent     = dietTotal;
+  document.getElementById('dash-workout-streak').textContent  = workout;
+  document.getElementById('dash-workout-total').textContent   = gymTotal;
+  document.getElementById('dash-diet-streak').textContent     = diet;
+  document.getElementById('dash-diet-total').textContent      = dietTotal;
   document.getElementById('dash-combined-streak').textContent = combined;
-  document.getElementById('dash-cf-total').textContent       = cfTotal;
+  document.getElementById('dash-cf-total').textContent        = cfTotal;
 }
 
-// ── 숙제 렌더링 ──────────────────────────────────────────────────
-function _renderQuests() {
-  const quests = getQuests();
-  const daily  = quests.filter(q => q.type === 'daily');
-  const weekly = quests.filter(q => q.type === 'weekly');
-
-  _renderQuestSection('daily-quests',  daily,  'daily');
-  _renderQuestSection('weekly-quests', weekly, 'weekly');
+// ── 날짜 유틸 ────────────────────────────────────────────────────
+function _getWeekStart() {
+  const d = new Date(TODAY);
+  const day = d.getDay();
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day)); // 월요일 기준
+  return d;
 }
 
-function _renderQuestSection(elId, quests, type) {
-  const el = document.getElementById(elId);
-  if (!el) return;
+function _getMonthStart() {
+  return new Date(TODAY.getFullYear(), TODAY.getMonth(), 1);
+}
 
-  const todayKey  = dateKey(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
-  const weekStart = _getWeekStart();
+function _getQuarterStart() {
+  const m = TODAY.getMonth();
+  const qm = Math.floor(m / 3) * 3; // 0, 3, 6, 9
+  return new Date(TODAY.getFullYear(), qm, 1);
+}
 
-  // 자동 연동 숙제 상태 계산
-  const y=TODAY.getFullYear(), m=TODAY.getMonth(), d=TODAY.getDate();
-  const autoWorkoutDone = getMuscles(y,m,d).length > 0 || getCF(y,m,d);
-  const autoDietDone    = dietDayOk(y,m,d) === true;
-
-  // 주간 숙제면 이번 주 완료 횟수 계산
-  function _weeklyCount(quest) {
-    if (!quest.auto) {
-      let cnt = 0;
-      for (let i=0; i<7; i++) {
-        const dd = new Date(weekStart); dd.setDate(dd.getDate()+i);
-        const k  = dateKey(dd.getFullYear(), dd.getMonth(), dd.getDate());
-        if (quest.checks?.[k]) cnt++;
-      }
-      return cnt;
-    }
-    // 자동 연동 주간
+// ── 기간 내 체크 횟수 계산 ───────────────────────────────────────
+function _countChecksInRange(quest, startDate, days) {
+  if (quest.auto) {
     let cnt = 0;
-    for (let i=0; i<7; i++) {
-      const dd = new Date(weekStart); dd.setDate(dd.getDate()+i);
+    for (let i = 0; i < days; i++) {
+      const dd = new Date(startDate); dd.setDate(dd.getDate() + i);
+      if (dd > TODAY) break;
       const yy=dd.getFullYear(), mm=dd.getMonth(), ddd=dd.getDate();
       if (quest.autoType === 'workout' && (getMuscles(yy,mm,ddd).length > 0 || getCF(yy,mm,ddd))) cnt++;
       if (quest.autoType === 'diet'    && dietDayOk(yy,mm,ddd) === true) cnt++;
     }
     return cnt;
   }
+  let cnt = 0;
+  for (let i = 0; i < days; i++) {
+    const dd = new Date(startDate); dd.setDate(dd.getDate() + i);
+    if (dd > TODAY) break;
+    const k = dateKey(dd.getFullYear(), dd.getMonth(), dd.getDate());
+    if (quest.checks?.[k]) cnt++;
+  }
+  return cnt;
+}
+
+// ── 퀘스트 렌더링 ────────────────────────────────────────────────
+function _renderQuests() {
+  const quests  = getQuests();
+  const byType  = { quarterly:[], monthly:[], weekly:[], daily:[] };
+  quests.forEach(q => { if (byType[q.type]) byType[q.type].push(q); });
+
+  _renderQuestSection('quarterly-quests', byType.quarterly, 'quarterly');
+  _renderQuestSection('monthly-quests',   byType.monthly,   'monthly');
+  _renderQuestSection('weekly-quests',    byType.weekly,    'weekly');
+  _renderQuestSection('daily-quests',     byType.daily,     'daily');
+}
+
+function _renderQuestSection(elId, quests, type) {
+  const el = document.getElementById(elId);
+  if (!el) return;
 
   if (!quests.length) {
-    el.innerHTML = `<div class="quest-empty">아직 숙제가 없어요. + 버튼으로 추가하세요.</div>`;
+    el.innerHTML = `<div class="quest-empty">아직 퀘스트가 없어요.</div>`;
     return;
   }
 
-  el.innerHTML = quests.map(quest => {
-    let done = false;
-    let pct  = 0;
-    let label = '';
+  const todayKey    = dateKey(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  const weekStart   = _getWeekStart();
+  const monthStart  = _getMonthStart();
+  const quarterStart= _getQuarterStart();
+
+  // 자동 연동 (일간용)
+  const y=TODAY.getFullYear(), m=TODAY.getMonth(), d=TODAY.getDate();
+  const autoWorkoutDone = getMuscles(y,m,d).length > 0 || getCF(y,m,d);
+  const autoDietDone    = dietDayOk(y,m,d) === true;
+
+  const cards = quests.map(quest => {
+    let done=false, pct=0, label='';
+    const target = quest.target || 1; // 목표 횟수 (1이면 1회성)
 
     if (type === 'daily') {
       if (quest.auto) {
@@ -98,43 +120,62 @@ function _renderQuestSection(elId, quests, type) {
         done = !!quest.checks?.[todayKey];
       }
       pct   = done ? 100 : 0;
-      label = done ? '완료' : '미완';
-    } else {
-      // 주간
-      const target = quest.weeklyTarget || 7;
-      const cnt    = _weeklyCount(quest);
+      label = done ? '✓ 완료' : '미완';
+
+    } else if (type === 'weekly') {
+      const daysInWeek = 7;
+      const cnt = _countChecksInRange(quest, weekStart, daysInWeek);
       pct   = Math.min(Math.round((cnt / target) * 100), 100);
       done  = pct >= 100;
-      label = `${cnt}/${target}`;
+      label = target === 1 ? (done ? '✓ 완료' : '미완') : `${cnt}/${target}회`;
+
+    } else if (type === 'monthly') {
+      const daysInM = daysInMonth(TODAY.getFullYear(), TODAY.getMonth());
+      const cnt = _countChecksInRange(quest, monthStart, daysInM);
+      pct   = Math.min(Math.round((cnt / target) * 100), 100);
+      done  = pct >= 100;
+      label = target === 1 ? (done ? '✓ 완료' : '미완') : `${cnt}/${target}회`;
+
+    } else if (type === 'quarterly') {
+      // 분기 일수 계산
+      const qEnd = new Date(quarterStart);
+      qEnd.setMonth(qEnd.getMonth() + 3);
+      const totalDays = Math.ceil((qEnd - quarterStart) / 86400000);
+      const cnt = _countChecksInRange(quest, quarterStart, totalDays);
+      pct   = Math.min(Math.round((cnt / target) * 100), 100);
+      done  = pct >= 100;
+      label = target === 1 ? (done ? '✓ 완료' : '미완') : `${cnt}/${target}회`;
     }
 
     const barColor = done ? 'var(--streak)' : pct > 50 ? 'var(--accent)' : 'var(--gym)';
     const autoTag  = quest.auto ? `<span class="quest-auto-tag">자동</span>` : '';
+    const checkable = !quest.auto;
 
     return `
-      <div class="quest-row ${done ? 'done' : ''}" data-id="${quest.id}" data-type="${type}">
-        <div class="quest-row-top">
-          <div class="quest-check ${done ? 'checked' : ''}" onclick="toggleQuestCheck('${quest.id}','${type}')">
-            ${done ? '✓' : ''}
+      <div class="quest-card ${done ? 'done' : ''}">
+        <div class="quest-card-top">
+          <span class="quest-card-title">${quest.title}</span>
+          <div class="quest-card-actions">
+            ${autoTag}
+            <button class="quest-edit-btn" onclick="openQuestEditModal('${quest.id}')">✏️</button>
+            <button class="quest-delete-btn" onclick="deleteQuestItem('${quest.id}')">✕</button>
           </div>
-          <span class="quest-title">${quest.title}</span>
-          ${autoTag}
-          <span class="quest-label" style="color:${barColor}">${label}</span>
-          <button class="quest-delete-btn" onclick="deleteQuestItem('${quest.id}')">✕</button>
         </div>
-        <div class="quest-bar-wrap">
-          <div class="quest-bar" style="width:${pct}%;background:${barColor}"></div>
+        <div class="quest-card-bottom">
+          <div class="quest-bar-wrap">
+            <div class="quest-bar" style="width:${pct}%;background:${barColor}"></div>
+          </div>
+          <div class="quest-card-footer">
+            <span class="quest-label" style="color:${barColor}">${label}</span>
+            ${checkable ? `<button class="quest-check-btn ${done?'checked':''}" onclick="toggleQuestCheck('${quest.id}','${type}')">
+              ${type === 'daily' ? (done ? '취소' : '완료') : '+ 체크'}
+            </button>` : ''}
+          </div>
         </div>
       </div>`;
   }).join('');
-}
 
-function _getWeekStart() {
-  const d = new Date(TODAY);
-  const day = d.getDay(); // 0=일
-  const diff = day === 0 ? -6 : 1 - day; // 월요일 기준
-  d.setDate(d.getDate() + diff);
-  return d;
+  el.innerHTML = `<div class="quest-grid">${cards}</div>`;
 }
 
 // ── 목표 진행률 ──────────────────────────────────────────────────
