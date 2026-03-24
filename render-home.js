@@ -1,33 +1,26 @@
 // ================================================================
 // render-home.js
-// 의존성: config.js, data.js
-// 변경: 7번 streak 3종 분리, 11번 목표 진행률 카드
+// 변경: 통합 대시보드, 주간/일간 숙제, 목표 개편
 // ================================================================
 
 import { MUSCLES }                                   from './config.js';
 import { TODAY, getMuscles, getCF, getDiet, dietDayOk,
          getExercises, getExList, daysInMonth,
          calcStreaks, getGoals, getVolumeHistory,
-         getCache }                                  from './data.js';
+         getCache, getQuests, dateKey }               from './data.js';
 
 export function renderHome() {
-  _renderStreaks();
+  _renderDashboard();
+  _renderQuests();
   _renderGoals();
   _renderTodayDiet();
   _renderTodayWorkout();
 }
 
-// ── 7번: streak 3종 ──────────────────────────────────────────────
-function _renderStreaks() {
+// ── 통합 대시보드 ─────────────────────────────────────────────────
+function _renderDashboard() {
   const { workout, diet, combined } = calcStreaks();
-  document.getElementById('streak-workout').textContent  = workout;
-  document.getElementById('streak-diet').textContent     = diet;
-  document.getElementById('streak-combined').textContent = combined;
 
-  // 상단 헤더 칩도 통합 streak으로 업데이트
-  document.getElementById('h-streak').textContent = combined;
-
-  // 전체 카운트
   let gymTotal=0, cfTotal=0, dietTotal=0;
   for (let y=2020; y<=2030; y++) for (let m=0; m<12; m++)
     for (let d=1; d<=daysInMonth(y,m); d++) {
@@ -35,12 +28,116 @@ function _renderStreaks() {
       if (getCF(y,m,d))             cfTotal++;
       if (dietDayOk(y,m,d)===true)  dietTotal++;
     }
-  document.getElementById('h-gym').textContent  = gymTotal;
-  document.getElementById('h-cf').textContent   = cfTotal;
-  document.getElementById('h-diet').textContent = dietTotal;
+
+  document.getElementById('dash-workout-streak').textContent = workout;
+  document.getElementById('dash-workout-total').textContent  = gymTotal;
+  document.getElementById('dash-diet-streak').textContent    = diet;
+  document.getElementById('dash-diet-total').textContent     = dietTotal;
+  document.getElementById('dash-combined-streak').textContent = combined;
+  document.getElementById('dash-cf-total').textContent       = cfTotal;
 }
 
-// ── 11번: 목표 진행률 ────────────────────────────────────────────
+// ── 숙제 렌더링 ──────────────────────────────────────────────────
+function _renderQuests() {
+  const quests = getQuests();
+  const daily  = quests.filter(q => q.type === 'daily');
+  const weekly = quests.filter(q => q.type === 'weekly');
+
+  _renderQuestSection('daily-quests',  daily,  'daily');
+  _renderQuestSection('weekly-quests', weekly, 'weekly');
+}
+
+function _renderQuestSection(elId, quests, type) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+
+  const todayKey  = dateKey(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  const weekStart = _getWeekStart();
+
+  // 자동 연동 숙제 상태 계산
+  const y=TODAY.getFullYear(), m=TODAY.getMonth(), d=TODAY.getDate();
+  const autoWorkoutDone = getMuscles(y,m,d).length > 0 || getCF(y,m,d);
+  const autoDietDone    = dietDayOk(y,m,d) === true;
+
+  // 주간 숙제면 이번 주 완료 횟수 계산
+  function _weeklyCount(quest) {
+    if (!quest.auto) {
+      let cnt = 0;
+      for (let i=0; i<7; i++) {
+        const dd = new Date(weekStart); dd.setDate(dd.getDate()+i);
+        const k  = dateKey(dd.getFullYear(), dd.getMonth(), dd.getDate());
+        if (quest.checks?.[k]) cnt++;
+      }
+      return cnt;
+    }
+    // 자동 연동 주간
+    let cnt = 0;
+    for (let i=0; i<7; i++) {
+      const dd = new Date(weekStart); dd.setDate(dd.getDate()+i);
+      const yy=dd.getFullYear(), mm=dd.getMonth(), ddd=dd.getDate();
+      if (quest.autoType === 'workout' && (getMuscles(yy,mm,ddd).length > 0 || getCF(yy,mm,ddd))) cnt++;
+      if (quest.autoType === 'diet'    && dietDayOk(yy,mm,ddd) === true) cnt++;
+    }
+    return cnt;
+  }
+
+  if (!quests.length) {
+    el.innerHTML = `<div class="quest-empty">아직 숙제가 없어요. + 버튼으로 추가하세요.</div>`;
+    return;
+  }
+
+  el.innerHTML = quests.map(quest => {
+    let done = false;
+    let pct  = 0;
+    let label = '';
+
+    if (type === 'daily') {
+      if (quest.auto) {
+        done = quest.autoType === 'workout' ? autoWorkoutDone : autoDietDone;
+      } else {
+        done = !!quest.checks?.[todayKey];
+      }
+      pct   = done ? 100 : 0;
+      label = done ? '완료' : '미완';
+    } else {
+      // 주간
+      const target = quest.weeklyTarget || 7;
+      const cnt    = _weeklyCount(quest);
+      pct   = Math.min(Math.round((cnt / target) * 100), 100);
+      done  = pct >= 100;
+      label = `${cnt}/${target}`;
+    }
+
+    const barColor = done ? 'var(--streak)' : pct > 50 ? 'var(--accent)' : 'var(--gym)';
+    const autoTag  = quest.auto ? `<span class="quest-auto-tag">자동</span>` : '';
+
+    return `
+      <div class="quest-row ${done ? 'done' : ''}" data-id="${quest.id}" data-type="${type}">
+        <div class="quest-row-top">
+          <div class="quest-check ${done ? 'checked' : ''}" onclick="toggleQuestCheck('${quest.id}','${type}')">
+            ${done ? '✓' : ''}
+          </div>
+          <span class="quest-title">${quest.title}</span>
+          ${autoTag}
+          <span class="quest-label" style="color:${barColor}">${label}</span>
+          <button class="quest-delete-btn" onclick="deleteQuestItem('${quest.id}')">✕</button>
+        </div>
+        <div class="quest-bar-wrap">
+          <div class="quest-bar" style="width:${pct}%;background:${barColor}"></div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function _getWeekStart() {
+  const d = new Date(TODAY);
+  const day = d.getDay(); // 0=일
+  const diff = day === 0 ? -6 : 1 - day; // 월요일 기준
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+
+// ── 목표 진행률 ──────────────────────────────────────────────────
 function _renderGoals() {
   const goals = getGoals();
   const el    = document.getElementById('goals-section');
@@ -48,62 +145,50 @@ function _renderGoals() {
 
   if (!goals.length) {
     el.innerHTML = `
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">아직 설정된 목표가 없어요.</div>
+      <div class="quest-empty">아직 설정된 목표가 없어요.</div>
       <button class="goal-add-btn" onclick="openGoalModal()">+ 목표 추가</button>`;
     return;
   }
 
-  const ny = TODAY.getFullYear(), nm = TODAY.getMonth();
-
   const rows = goals.map(goal => {
-    const { current, max } = _calcGoalProgress(goal, ny, nm);
-    const pct     = max > 0 ? Math.min(Math.round((current/max)*100), 100) : 0;
-    const done    = pct >= 100;
-    const barColor= done ? 'var(--streak)' : 'var(--accent)';
+    const today    = new Date();
+    const ddayDate = goal.dday ? new Date(goal.dday) : null;
+    const daysLeft = ddayDate ? Math.ceil((ddayDate - today) / 86400000) : null;
+    const ddayStr  = daysLeft === null  ? ''
+                   : daysLeft > 0  ? `D-${daysLeft}`
+                   : daysLeft === 0 ? 'D-Day!'
+                   : `D+${Math.abs(daysLeft)}`;
+    const ddayColor = daysLeft !== null && daysLeft <= 7 ? 'var(--diet-bad)' : 'var(--accent)';
+
+    const ai = goal.aiAnalysis;
+    const aiHtml = ai ? `
+      <div class="goal-ai-result">
+        <div class="goal-ai-row">
+          <span class="goal-ai-label">실현가능성</span>
+          <span class="goal-ai-val" style="color:${ai.feasibility>=70?'var(--streak)':ai.feasibility>=40?'var(--accent)':'var(--diet-bad)'}">${ai.feasibility}%</span>
+        </div>
+        <div class="goal-ai-row">
+          <span class="goal-ai-label">현실적 완료일</span>
+          <span class="goal-ai-val">${ai.realisticDate}</span>
+        </div>
+        ${ai.summary ? `<div class="goal-ai-summary">${ai.summary}</div>` : ''}
+        <button class="goal-reanalyze-btn" onclick="analyzeGoalFeasibility('${goal.id}')">🔄 재분석</button>
+      </div>` : `
+      <button class="goal-analyze-btn" onclick="analyzeGoalFeasibility('${goal.id}')">✨ AI 실현가능성 분석</button>`;
 
     return `
       <div class="goal-row">
         <div class="goal-row-top">
           <span class="goal-label">${goal.label}</span>
-          <span class="goal-value" style="color:${barColor}">
-            ${done ? '✅ 달성!' : `${current} / ${max}${goal.unit}`}
-          </span>
+          ${ddayStr ? `<span class="goal-dday" style="color:${ddayColor}">${ddayStr}</span>` : ''}
           <button class="goal-delete-btn" onclick="deleteGoalItem('${goal.id}')">✕</button>
         </div>
-        <div class="goal-bar-wrap">
-          <div class="goal-bar" style="width:${pct}%;background:${barColor}"></div>
-        </div>
+        ${goal.condition ? `<div class="goal-condition">조건: 주 ${goal.condition.workoutPerWeek||'-'}회 운동 / 식단OK ${goal.condition.dietOkPct||'-'}%</div>` : ''}
+        ${aiHtml}
       </div>`;
   }).join('');
 
   el.innerHTML = rows + `<button class="goal-add-btn" onclick="openGoalModal()">+ 목표 추가</button>`;
-}
-
-function _calcGoalProgress(goal, ny, nm) {
-  const { workout, diet } = calcStreaks();
-  switch (goal.type) {
-    case 'monthly_workout': {
-      let cnt = 0;
-      for (let d=1; d<=daysInMonth(ny,nm); d++)
-        if (getMuscles(ny,nm,d).length || getCF(ny,nm,d)) cnt++;
-      return { current: cnt, max: goal.target };
-    }
-    case 'exercise_weight': {
-      const history = getVolumeHistory(goal.exerciseId || '');
-      const last    = history.slice(-1)[0];
-      // 최고 세트 kg 근사: 볼륨 ÷ 평균 reps(10 가정)
-      const kg = last ? Math.round(last.volume / 10) : 0;
-      return { current: kg, max: goal.target };
-    }
-    case 'streak_workout':
-      return { current: workout, max: goal.target };
-    case 'streak_diet':
-      return { current: diet, max: goal.target };
-    case 'streak_combined':
-      return { current: calcStreaks().combined, max: goal.target };
-    default:
-      return { current: 0, max: goal.target };
-  }
 }
 
 // ── 오늘 식단 ────────────────────────────────────────────────────

@@ -96,7 +96,7 @@ export async function loadStocks() {
       results[i]  = { ...results[i], ...quote };
       renderStocks(results, true);
 
-      await delay(15000); // 25회/일 한도 — 15초 간격
+      await delay(1000); // 1초 간격
 
       // RSI (일별 데이터 기반 직접 계산)
       const rsi  = await fetchRSI(sym);
@@ -106,7 +106,7 @@ export async function loadStocks() {
       console.warn(`[stocks] ${sym}:`, e.message);
     }
 
-    if (i < CONFIG.TICKERS.length - 1) await delay(15000);
+    if (i < CONFIG.TICKERS.length - 1) await delay(1000);
   }
 
   localStorage.setItem(CACHE_KEY, JSON.stringify(results));

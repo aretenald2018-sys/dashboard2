@@ -1,19 +1,22 @@
 // ================================================================
 // app.js — 앱 진입점
-// 변경: 11번 목표 모달 핸들러, 13번 CSV 내보내기 핸들러 추가
+// 변경: 목표 개편(D-day+자유입력+AI분석), 숙제(quest) 추가
 // ================================================================
 
-import { loadAll, saveGoal, deleteGoal, getGoals } from './data.js';
-import { loadStocks }                              from './stocks.js';
-import { getDietRec, getWorkoutRec }               from './ai.js';
-import { renderCalendar, changeYear }              from './render-calendar.js';
-import { renderStats, setPeriod, exportCSV }       from './render-stats.js';
-import { renderHome }                              from './render-home.js';
+import { loadAll, saveGoal, deleteGoal, getGoals,
+         saveQuest, deleteQuest, getQuests, dateKey,
+         TODAY }                                    from './data.js';
+import { loadStocks }                               from './stocks.js';
+import { getDietRec, getWorkoutRec,
+         analyzeGoalFeasibility }                   from './ai.js';
+import { renderCalendar, changeYear }               from './render-calendar.js';
+import { renderStats, setPeriod, exportCSV }        from './render-stats.js';
+import { renderHome }                               from './render-home.js';
 import { renderWine, openWineModal, closeWineModal,
          saveWineFromModal, deleteWineFromModal,
          searchVivinoRating, searchWineImage,
          analyzeWinePreference, bulkSearchVivino,
-         searchCriticRatings }  from './render-wine.js';
+         searchCriticRatings }                      from './render-wine.js';
 import {
   openSheet, closeSheet, toggleCF, confirmSheet,
   openExercisePicker, closeExercisePicker,
@@ -45,8 +48,15 @@ function renderAll() {
 
 document.addEventListener('sheet:saved', renderAll);
 
-// ── 11번: 목표 모달 ──────────────────────────────────────────────
+// ── 목표 모달 ────────────────────────────────────────────────────
 function openGoalModal() {
+  // 폼 초기화
+  document.getElementById('goal-label').value         = '';
+  document.getElementById('goal-dday').value          = '';
+  document.getElementById('goal-use-condition').checked = false;
+  document.getElementById('goal-condition-wrap').style.display = 'none';
+  document.getElementById('goal-workout-per-week').value = '';
+  document.getElementById('goal-diet-ok-pct').value   = '';
   document.getElementById('goal-modal').classList.add('open');
 }
 
@@ -55,23 +65,28 @@ function closeGoalModal(e) {
   document.getElementById('goal-modal').classList.remove('open');
 }
 
-async function saveGoalFromModal() {
-  const type   = document.getElementById('goal-type').value;
-  const target = parseInt(document.getElementById('goal-target').value);
-  const label  = document.getElementById('goal-label').value.trim();
-  if (!label || !target || target <= 0) { alert('목표 이름과 수치를 입력해주세요.'); return; }
+function toggleGoalCondition() {
+  const checked = document.getElementById('goal-use-condition').checked;
+  document.getElementById('goal-condition-wrap').style.display = checked ? 'block' : 'none';
+}
 
-  const unitMap = {
-    monthly_workout: '일', exercise_weight: 'kg',
-    streak_workout: '일', streak_diet: '일', streak_combined: '일',
-  };
+async function saveGoalFromModal() {
+  const label = document.getElementById('goal-label').value.trim();
+  const dday  = document.getElementById('goal-dday').value;
+  if (!label) { alert('목표 이름을 입력해주세요.'); return; }
+
+  const useCondition = document.getElementById('goal-use-condition').checked;
+  const condition = useCondition ? {
+    workoutPerWeek: parseInt(document.getElementById('goal-workout-per-week').value) || null,
+    dietOkPct:      parseInt(document.getElementById('goal-diet-ok-pct').value)      || null,
+  } : null;
 
   await saveGoal({
-    id:     `goal_${Date.now()}`,
-    type,
+    id: `goal_${Date.now()}`,
     label,
-    target,
-    unit: unitMap[type] || '',
+    dday:       dday || null,
+    condition,
+    aiAnalysis: null,
   });
 
   document.getElementById('goal-modal').classList.remove('open');
@@ -84,7 +99,98 @@ async function deleteGoalItem(id) {
   renderAll();
 }
 
-// ── 13번: CSV 내보내기 ───────────────────────────────────────────
+async function analyzeGoalFeasibilityHandler(id) {
+  const goal = getGoals().find(g => g.id === id);
+  if (!goal) return;
+
+  // 버튼 로딩 상태
+  const btns = document.querySelectorAll(`[onclick="analyzeGoalFeasibility('${id}')"]`);
+  btns.forEach(b => { b.disabled = true; b.textContent = '분석 중...'; });
+
+  try {
+    const result = await analyzeGoalFeasibility(goal);
+    await saveGoal({ ...goal, aiAnalysis: result });
+    renderAll();
+  } catch(e) {
+    alert('분석 실패: ' + e.message);
+    btns.forEach(b => { b.disabled = false; b.textContent = '✨ AI 실현가능성 분석'; });
+  }
+}
+
+// ── 숙제 모달 ────────────────────────────────────────────────────
+function openQuestModal() {
+  document.getElementById('quest-title').value       = '';
+  document.getElementById('quest-type').value        = 'daily';
+  document.getElementById('quest-auto').checked      = false;
+  document.getElementById('quest-auto-wrap').style.display   = 'none';
+  document.getElementById('quest-weekly-wrap').style.display = 'none';
+  document.getElementById('quest-weekly-target').value = '5';
+  document.getElementById('quest-modal').classList.add('open');
+}
+
+function closeQuestModal(e) {
+  if (e && e.target !== document.getElementById('quest-modal')) return;
+  document.getElementById('quest-modal').classList.remove('open');
+}
+
+function onQuestTypeChange() {
+  const type = document.getElementById('quest-type').value;
+  document.getElementById('quest-weekly-wrap').style.display = type === 'weekly' ? 'block' : 'none';
+}
+
+function onQuestAutoChange() {
+  const checked = document.getElementById('quest-auto').checked;
+  document.getElementById('quest-auto-wrap').style.display = checked ? 'block' : 'none';
+}
+
+async function saveQuestFromModal() {
+  const title  = document.getElementById('quest-title').value.trim();
+  const type   = document.getElementById('quest-type').value;
+  const isAuto = document.getElementById('quest-auto').checked;
+  const autoType = document.getElementById('quest-auto-type')?.value || 'workout';
+  const weeklyTarget = parseInt(document.getElementById('quest-weekly-target').value) || 5;
+
+  if (!title) { alert('숙제 이름을 입력해주세요.'); return; }
+
+  await saveQuest({
+    id:           `quest_${Date.now()}`,
+    title,
+    type,
+    auto:         isAuto,
+    autoType:     isAuto ? autoType : null,
+    weeklyTarget: type === 'weekly' ? weeklyTarget : null,
+    checks:       {},
+  });
+
+  document.getElementById('quest-modal').classList.remove('open');
+  renderAll();
+}
+
+async function deleteQuestItem(id) {
+  if (!confirm('숙제를 삭제할까요?')) return;
+  await deleteQuest(id);
+  renderAll();
+}
+
+async function toggleQuestCheck(id, type) {
+  const quest = getQuests().find(q => q.id === id);
+  if (!quest || quest.auto) return; // 자동 연동은 수동 체크 불가
+
+  const todayKey = dateKey(TODAY.getFullYear(), TODAY.getMonth(), TODAY.getDate());
+  const checks   = { ...(quest.checks || {}) };
+
+  if (type === 'daily') {
+    checks[todayKey] = !checks[todayKey];
+  } else {
+    // 주간은 오늘 날짜 기준 토글
+    checks[todayKey] = !checks[todayKey];
+  }
+
+  await saveQuest({ ...quest, checks });
+  renderAll();
+}
+
+// ── CSV 내보내기 ─────────────────────────────────────────────────
 function openExportModal() {
   document.getElementById('export-modal').classList.add('open');
 }
@@ -123,16 +229,14 @@ function saveSettings() {
 window.openSettingsModal  = openSettingsModal;
 window.closeSettingsModal = closeSettingsModal;
 window.saveSettings       = saveSettings;
+
 async function init() {
   await loadAll();
   renderHome();
   renderCalendar();
   loadStocks();
   document.getElementById('loading').classList.add('hidden');
-
-  // 항상 설정 모달 오픈 (키 확인/재입력용)
   setTimeout(() => openSettingsModal(), 600);
-
   setTimeout(() => {
     document.querySelectorAll('.today-cell')[0]
       ?.scrollIntoView({ behavior:'smooth', block:'center' });
@@ -141,7 +245,7 @@ async function init() {
 
 init();
 
-// ── window 등록 (HTML onclick용만) ───────────────────────────────
+// ── window 등록 ──────────────────────────────────────────────────
 window.switchTab              = switchTab;
 window.changeYear             = changeYear;
 window.setPeriod              = setPeriod;
@@ -159,21 +263,31 @@ window.closeExerciseEditor    = closeExerciseEditor;
 window.saveExerciseFromEditor = saveExerciseFromEditor;
 window.deleteExerciseFromEditor = deleteExerciseFromEditor;
 // 목표
-window.openGoalModal    = openGoalModal;
-window.closeGoalModal   = closeGoalModal;
-window.saveGoalFromModal= saveGoalFromModal;
-window.deleteGoalItem   = deleteGoalItem;
+window.openGoalModal          = openGoalModal;
+window.closeGoalModal         = closeGoalModal;
+window.saveGoalFromModal      = saveGoalFromModal;
+window.deleteGoalItem         = deleteGoalItem;
+window.analyzeGoalFeasibility = analyzeGoalFeasibilityHandler;
+window.toggleGoalCondition    = toggleGoalCondition;
+// 숙제
+window.openQuestModal         = openQuestModal;
+window.closeQuestModal        = closeQuestModal;
+window.saveQuestFromModal     = saveQuestFromModal;
+window.deleteQuestItem        = deleteQuestItem;
+window.toggleQuestCheck       = toggleQuestCheck;
+window.onQuestTypeChange      = onQuestTypeChange;
+window.onQuestAutoChange      = onQuestAutoChange;
 // CSV
-window.openExportModal  = openExportModal;
-window.closeExportModal = closeExportModal;
-window.runExportCSV     = runExportCSV;
+window.openExportModal        = openExportModal;
+window.closeExportModal       = closeExportModal;
+window.runExportCSV           = runExportCSV;
 // 와인
-window.openWineModal        = openWineModal;
-window.closeWineModal       = closeWineModal;
-window.saveWineFromModal    = saveWineFromModal;
-window.deleteWineFromModal  = deleteWineFromModal;
-window.searchVivinoRating    = searchVivinoRating;
-window.searchWineImage       = searchWineImage;
-window.searchCriticRatings   = searchCriticRatings;
-window.analyzeWinePreference = analyzeWinePreference;
-window.bulkSearchVivino      = bulkSearchVivino;
+window.openWineModal          = openWineModal;
+window.closeWineModal         = closeWineModal;
+window.saveWineFromModal      = saveWineFromModal;
+window.deleteWineFromModal    = deleteWineFromModal;
+window.searchVivinoRating     = searchVivinoRating;
+window.searchWineImage        = searchWineImage;
+window.searchCriticRatings    = searchCriticRatings;
+window.analyzeWinePreference  = analyzeWinePreference;
+window.bulkSearchVivino       = bulkSearchVivino;

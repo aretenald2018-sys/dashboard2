@@ -21,23 +21,28 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .tab-btn{flex:1;padding:13px 4px;background:none;border:none;border-bottom:2px solid transparent;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;-webkit-tap-highlight-color:transparent;}
 .tab-btn.active{color:var(--text);border-bottom-color:var(--accent);}
 .tab-panel{display:none;}.tab-panel.active{display:block;}
-.stats-header{background:var(--surface);padding:12px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border-bottom:1px solid var(--border);}
-.stat-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 6px;text-align:center;}
-.stat-chip .val{font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;line-height:1;}
-.stat-chip .lbl{font-size:9px;color:var(--muted);margin-top:3px;line-height:1.3;}
-.s-streak .val{color:var(--streak);}.s-gym .val{color:var(--gym);}.s-cf .val{color:var(--cf);}.s-diet .val{color:var(--diet-ok);}
 
-/* ── 7번: streak 카드 ── */
-.streak-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);}
-.streak-card{border-radius:10px;padding:12px 8px;text-align:center;}
-.streak-card.workout{background:var(--gym-dim);border:1px solid var(--gym);}
-.streak-card.diet{background:var(--diet-ok-dim);border:1px solid var(--diet-ok);}
-.streak-card.combined{background:#1a1200;border:1px solid var(--accent);}
-.streak-card-val{font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;line-height:1;}
-.streak-card.workout .streak-card-val{color:var(--gym);}
-.streak-card.diet    .streak-card-val{color:var(--diet-ok);}
-.streak-card.combined .streak-card-val{color:var(--accent);}
-.streak-card-lbl{font-size:10px;color:var(--muted2);margin-top:4px;}
+/* ── 통합 대시보드 ── */
+.dash-board{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 16px;background:var(--bg);border-bottom:1px solid var(--border);}
+.dash-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 14px;}
+.dash-card-title{font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;letter-spacing:.3px;}
+.dash-stat-row{display:flex;align-items:center;}
+.dash-stat{flex:1;text-align:center;}
+.dash-stat-val{font-family:'JetBrains Mono',monospace;font-size:26px;font-weight:700;line-height:1;}
+.dash-stat-lbl{font-size:9px;color:var(--muted);margin-top:3px;letter-spacing:.3px;}
+.dash-stat-divider{width:1px;height:34px;background:var(--border);flex-shrink:0;margin:0 4px;}
+.dash-workout{border-color:var(--gym);}
+.dash-workout .dash-card-title{color:var(--gym);}
+.dash-workout .dash-stat-val{color:var(--gym);}
+.dash-diet{border-color:var(--diet-ok);}
+.dash-diet .dash-card-title{color:var(--diet-ok);}
+.dash-diet .dash-stat-val{color:var(--diet-ok);}
+.dash-combined{border-color:var(--accent);}
+.dash-combined .dash-card-title{color:var(--accent);}
+.dash-combined .dash-stat-val{color:var(--accent);font-size:30px;}
+.dash-cf{border-color:var(--cf);}
+.dash-cf .dash-card-title{color:var(--cf);}
+.dash-cf .dash-stat-val{color:var(--cf);font-size:30px;}
 
 .ai-panel{padding:12px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--border);background:var(--surface);}
 .ai-row{display:flex;gap:8px;align-items:flex-start;}
@@ -58,18 +63,42 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .change-up{color:#10b981;}.change-down{color:#ef4444;}.change-flat{color:var(--muted);}
 .stock-updated{font-size:10px;color:var(--muted);margin-top:6px;text-align:right;}
 
-/* ── 11번: 목표 ── */
-.goal-row{margin-bottom:12px;}
-.goal-row-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
-.goal-label{font-size:12px;color:var(--text);flex:1;}
-.goal-value{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0;}
+/* ── 숙제 ── */
+.home-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.quest-add-btn{background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 10px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;}
+.quest-add-btn:active{background:var(--surface3);}
+.quest-empty{font-size:12px;color:var(--muted);padding:4px 0 8px;}
+.quest-row{margin-bottom:10px;}
+.quest-row.done .quest-title{opacity:.5;text-decoration:line-through;}
+.quest-row-top{display:flex;align-items:center;gap:8px;margin-bottom:5px;}
+.quest-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff;cursor:pointer;flex-shrink:0;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.quest-check.checked{background:var(--streak);border-color:var(--streak);}
+.quest-title{flex:1;font-size:12px;color:var(--text);}
+.quest-auto-tag{font-size:9px;background:var(--cf-dim);color:var(--cf);border:1px solid var(--cf);border-radius:4px;padding:1px 5px;flex-shrink:0;}
+.quest-label{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;flex-shrink:0;}
+.quest-delete-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
+.quest-bar-wrap{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;}
+.quest-bar{height:100%;border-radius:3px;transition:width .5s ease;}
+
+/* ── 목표 ── */
+.goal-row{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px;}
+.goal-row-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.goal-label{flex:1;font-size:13px;font-weight:500;color:var(--text);}
+.goal-dday{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;flex-shrink:0;}
 .goal-delete-btn{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0 2px;-webkit-tap-highlight-color:transparent;}
-.goal-bar-wrap{height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;}
-.goal-bar{height:100%;border-radius:3px;transition:width .5s ease;}
+.goal-condition{font-size:11px;color:var(--muted);margin-bottom:8px;}
+.goal-ai-result{background:var(--surface3);border-radius:8px;padding:10px;margin-top:6px;}
+.goal-ai-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.goal-ai-label{font-size:11px;color:var(--muted2);}
+.goal-ai-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
+.goal-ai-summary{font-size:11px;color:var(--muted2);line-height:1.6;margin-top:6px;padding-top:6px;border-top:1px solid var(--border);}
+.goal-analyze-btn,.goal-reanalyze-btn{width:100%;padding:8px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-size:11px;cursor:pointer;margin-top:6px;-webkit-tap-highlight-color:transparent;transition:all .12s;}
+.goal-analyze-btn:active,.goal-reanalyze-btn:active{background:var(--surface2);}
 .goal-add-btn{width:100%;padding:9px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Noto Sans KR',sans-serif;font-size:12px;cursor:pointer;margin-top:4px;-webkit-tap-highlight-color:transparent;transition:all .12s;}
 .goal-add-btn:active{background:var(--surface2);}
+.goal-condition-toggle-row{padding:4px 0;}
 
-/* ── 13번: CSV 내보내기 버튼 ── */
+/* ── CSV 내보내기 ── */
 .export-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-size:12px;padding:6px 14px;cursor:pointer;transition:all .12s;-webkit-tap-highlight-color:transparent;}
 .export-btn:active{transform:scale(.96);}
 .export-period-btn{width:100%;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Noto Sans KR',sans-serif;font-size:13px;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent;transition:all .12s;}
@@ -218,7 +247,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .diet-stat-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);}
 .diet-stat-row:last-child{border-bottom:none;}
 .diet-stat-label{font-size:12px;color:var(--muted2);}.diet-stat-val{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;color:var(--text);}
-.home-section{padding:16px;}.home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}.home-card-title{font-size:12px;font-weight:700;color:var(--muted2);margin-bottom:10px;}
+.home-section{padding:16px;}
+.home-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+.home-card-title{font-size:12px;font-weight:700;color:var(--muted2);margin-bottom:10px;}
 ::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 
 /* ── 와인 탭 ── */
@@ -228,8 +259,6 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .wine-add-btn:active{transform:scale(.96);}
 .wine-list{padding:0 0 80px;}
 .wine-cards-wrap{padding:0 16px;display:flex;flex-direction:column;gap:12px;padding-bottom:80px;}
-
-/* 와인 대시보드 */
 .wine-dashboard{margin:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:14px;}
 .wine-dash-title{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:.5px;margin-bottom:12px;}
 .wine-dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -244,40 +273,28 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .wine-pref-btn{background:#3a0a0a;border:1px solid #6a1010;border-radius:8px;color:#f87171;font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:6px 12px;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:all .12s;}
 .wine-pref-btn:active{transform:scale(.96);}
 .wine-pref-btn:disabled{opacity:.5;cursor:not-allowed;}
-
-/* 와인 카드 */
 .wine-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;cursor:pointer;transition:border-color .15s;-webkit-tap-highlight-color:transparent;}
 .wine-card:active{transform:scale(.99);}
 .wine-card-left{width:76px;flex-shrink:0;display:flex;flex-direction:column;}
 .wine-card-img{width:76px;height:110px;object-fit:cover;display:block;flex-shrink:0;}
 .wine-card-img-placeholder{width:76px;height:110px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
-
-/* 별점 행 */
 .wine-star-row{display:flex;align-items:center;justify-content:center;gap:4px;padding:6px 4px;background:var(--surface2);border-top:1px solid var(--border);}
-.wine-rating-label{font-size:9px;color:var(--muted);flex-shrink:0;}
-.wine-rating-val{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;}
-
 .wine-card-body{flex:1;padding:12px;overflow:hidden;min-width:0;}
 .wine-card-name{font-size:13px;font-weight:700;color:var(--text);line-height:1.3;margin-bottom:2px;}
 .wine-vintage{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted2);font-weight:400;}
 .wine-card-sub{font-size:11px;color:var(--muted);margin-bottom:6px;line-height:1.3;}
-
-/* 구조감 바 */
 .wine-structure{display:flex;flex-direction:column;gap:3px;margin-bottom:7px;}
 .wine-struct-item{display:flex;align-items:center;gap:6px;}
 .wine-struct-label{font-size:10px;color:var(--muted);width:24px;flex-shrink:0;}
 .wine-struct-bar-wrap{flex:1;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
 .wine-struct-bar{height:100%;background:linear-gradient(90deg,#8b2020,#c24040);border-radius:2px;transition:width .4s ease;}
 .wine-struct-val{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted2);width:16px;text-align:right;flex-shrink:0;}
-
 .wine-card-section{display:flex;gap:6px;margin-bottom:4px;}
 .wine-card-label{font-size:10px;font-weight:700;color:var(--muted);flex-shrink:0;width:14px;margin-top:1px;}
 .wine-card-text{font-size:11px;color:var(--muted2);line-height:1.5;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .wine-card-note{font-size:11px;color:var(--accent);font-style:italic;margin-top:4px;padding:4px 6px;background:rgba(245,158,11,.06);border-radius:4px;border-left:2px solid var(--accent);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
 .wine-taewoo-summary{font-size:11px;color:var(--accent);font-style:italic;margin-bottom:6px;}
 .wine-card-date{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);margin-top:6px;text-align:right;}
-
-/* 와인 추가 모달 */
 .wine-modal-sheet{max-height:92vh;}
 .wine-form{display:flex;flex-direction:column;gap:0;}
 .wine-form-section{margin-bottom:16px;}
@@ -289,11 +306,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',sans-seri
 .wine-form-input:focus{border-color:#8b2020;}
 .wine-form-input::placeholder{color:var(--muted);}
 .wine-form-textarea{resize:none;line-height:1.5;}
-.wine-estimated-check{display:flex;align-items:center;gap:4px;flex-shrink:0;padding-bottom:9px;}
-.wine-estimated-check input{width:14px;height:14px;}
 .wine-search-btn{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--muted2);font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:9px 10px;cursor:pointer;flex-shrink:0;-webkit-tap-highlight-color:transparent;transition:all .12s;white-space:nowrap;}
 .wine-search-btn:active{background:var(--surface3);}
-.wine-search-btn:disabled{opacity:.5;cursor:not-allowed;}
 .wine-form-actions{display:flex;gap:8px;margin-top:8px;}
 .wine-stars{font-size:12px;color:#f59e0b;letter-spacing:1px;}
 .wine-star-num{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:#f87171;}

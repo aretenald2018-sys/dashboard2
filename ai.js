@@ -1,12 +1,12 @@
 // ================================================================
 // ai.js
 // 의존성: config.js, data.js
-// 역할: Claude API 호출 (식단 분석, 식단 추천, 운동 추천)
-// 외부에서 사용: import { getDietRec, getWorkoutRec, analyzeDiet } from './ai.js'
+// 역할: Claude API 호출 (식단 분석, 식단 추천, 운동 추천, 목표 실현가능성)
 // ================================================================
 
 import { CONFIG, MUSCLES }                    from './config.js';
-import { TODAY, getMemo, getExercises, getDiet, getExList } from './data.js';
+import { TODAY, getMemo, getExercises, getDiet, getExList,
+         getMuscles, getCF, dietDayOk }        from './data.js';
 
 // ── 공통 Claude 호출 ─────────────────────────────────────────────
 async function callClaude(prompt, maxTokens = 400) {
@@ -93,7 +93,6 @@ export async function getWorkoutRec() {
 }
 
 // ── 식단 분석 ────────────────────────────────────────────────────
-// 반환: { breakfast:{ok,kcal,reason}, lunch:{ok,kcal,reason}, dinner:{ok,kcal,reason} }
 export async function analyzeDiet(breakfast, lunch, dinner) {
   if (!breakfast && !lunch && !dinner) throw new Error('식단을 입력해주세요.');
 
@@ -109,5 +108,48 @@ export async function analyzeDiet(breakfast, lunch, dinner) {
 
   const text   = await callClaude(prompt, 300);
   const clean  = text.trim().replace(/```json|```/g, '');
+  return JSON.parse(clean);
+}
+
+// ── 목표 실현가능성 분석 ─────────────────────────────────────────
+// 반환: { feasibility(0-100), realisticDate(YYYY-MM-DD), summary }
+export async function analyzeGoalFeasibility(goal) {
+  const today    = new Date();
+  const ddayDate = goal.dday ? new Date(goal.dday) : null;
+  const daysLeft = ddayDate ? Math.ceil((ddayDate - today) / 86400000) : null;
+
+  // 최근 30일 운동/식단 실적
+  let workoutDays=0, dietOkDays=0;
+  for (let i=0; i<30; i++) {
+    const d = new Date(TODAY); d.setDate(d.getDate()-i);
+    const y=d.getFullYear(), m=d.getMonth(), dd=d.getDate();
+    if (getMuscles(y,m,dd).length > 0 || getCF(y,m,dd)) workoutDays++;
+    if (dietDayOk(y,m,dd) === true) dietOkDays++;
+  }
+  const workoutRate = Math.round((workoutDays / 30) * 100);
+  const dietRate    = Math.round((dietOkDays  / 30) * 100);
+
+  const conditionStr = goal.condition
+    ? `사용자 설정 조건: 주 ${goal.condition.workoutPerWeek}회 운동, 식단OK ${goal.condition.dietOkPct}% 달성`
+    : '(조건 미설정 — 목표 이름에서 추론하여 판단, 추론 기반 참고용)';
+
+  const prompt = `당신은 헬스 트레이너 겸 목표 달성 코치입니다.
+사용자 목표: "${goal.label}"
+D-day: ${daysLeft !== null ? `${daysLeft}일 후 (${goal.dday})` : '날짜 미설정'}
+${conditionStr}
+
+최근 30일 실적:
+- 운동 실시율: ${workoutRate}% (${workoutDays}/30일)
+- 식단OK 달성률: ${dietRate}% (${dietOkDays}/30일)
+
+반드시 아래 JSON 형식으로만 응답 (다른 텍스트 없이):
+{"feasibility":72,"realisticDate":"2025-09-15","summary":"현재 운동 빈도는 양호하나 식단 관리가 부족합니다. 주 5회 운동과 식단 80% 달성 시 목표 달성 가능합니다."}
+
+feasibility: 0-100 정수 (현재 페이스 유지 시 목표일 내 달성 가능성 %)
+realisticDate: 현재 페이스를 유지했을 때 실제로 목표 달성 가능한 날짜 (YYYY-MM-DD)
+summary: 2-3문장 간결한 분석 및 개선 제안`;
+
+  const text  = await callClaude(prompt, 400);
+  const clean = text.trim().replace(/```json|```/g, '');
   return JSON.parse(clean);
 }
